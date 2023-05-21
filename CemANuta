@@ -1,0 +1,40 @@
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute
+
+# Definición del circuito cuántico
+qr = QuantumRegister(1)
+cr = ClassicalRegister(1)
+qc = QuantumCircuit(qr, cr)
+
+# Preparación del estado cuántico
+qc.h(qr[0])
+
+# Aplicación de la redundancia par (bit de paridad)
+qc.cx(qr[0], qr[1])  # CNOT entre el qubit original y el qubit auxiliar
+qc.measure(qr[0], cr[0])  # Medición del qubit original
+
+# Ejecución del circuito cuántico en un simulador local
+simulator = Aer.get_backend('qasm_simulator')
+job = execute(qc, simulator, shots=1)
+result = job.result()
+counts = result.get_counts(qc)
+
+# Obtención del resultado de la redundancia par
+bitstring = list(counts.keys())[0]
+parity_bit = int(bitstring)  # Bit de paridad medido
+
+# Corrección del error
+if parity_bit == 1:
+    # Aplicar una compuerta X para corregir el error
+    qc.x(qr[0])
+
+# Ejecución del circuito corregido para verificar el resultado
+job_corrected = execute(qc, simulator, shots=1)
+result_corrected = job_corrected.result()
+counts_corrected = result_corrected.get_counts(qc)
+bitstring_corrected = list(counts_corrected.keys())[0]
+
+# Obtención del resultado final
+decoded_bit = int(bitstring_corrected)  # Bit decodificado
+
+# Imprimir el resultado
+print("Decoded bit:", decoded_bit)
